@@ -1,0 +1,10 @@
+/user-service/vendor
+/user-service/.env
+
+/book-service/vendor
+/book-service/.env
+
+/loan-service/vendor
+/loan-service/.env
+
+/node_modules
