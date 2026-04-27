@@ -7,3 +7,4 @@ use App\Http\Controllers\LoanController;
 Route::get('/loans', [LoanController::class, 'index']);
 Route::get('/loans/{id}', [LoanController::class, 'show']);
 Route::post('/loans', [LoanController::class, 'store']);
+Route::put('/loans/{id}/return', [LoanController::class, 'returnBook']);

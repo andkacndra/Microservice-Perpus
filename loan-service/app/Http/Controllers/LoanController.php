@@ -24,6 +24,31 @@ class LoanController extends Controller
         return response()->json($loan);
     }
 
+public function returnBook($id)
+{
+    $loan = Loan::find($id);
+
+    if (!$loan) {
+        return response()->json(['message' => 'Loan tidak ditemukan'], 404);
+    }
+
+    if ($loan->status === 'dikembalikan') {
+        return response()->json(['message' => 'Buku sudah dikembalikan'], 400);
+    }
+
+    $loan->update([
+        'return_date' => now(),
+        'status' => 'dikembalikan'
+    ]);
+
+    Http::put("http://127.0.0.1:8002/api/books/$loan->book_id/add-stock");
+
+    return response()->json([
+        'message' => 'Buku berhasil dikembalikan',
+        'data' => $loan
+    ]);
+}
+
     public function store(Request $request)
     {
         $request->validate([
@@ -68,10 +93,14 @@ class LoanController extends Controller
             ], 400);
         }
 
+        Http::put("http://127.0.0.1:8002/api/books/$bookId/reduce-stock");
+
         // 🔥 SIMPAN LOAN
         $loan = Loan::create([
             'user_id' => $userId,
             'book_id' => $bookId,
+            'loan_date' => now(),     
+            'return_date' => null,     
             'status' => 'dipinjam'
         ]);
 

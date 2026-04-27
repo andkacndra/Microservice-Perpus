@@ -95,6 +95,7 @@ body { font-family: 'Inter', sans-serif; }
                             <th>Tgl Pinjam</th>
                             <th>Tgl Kembali</th>
                             <th>Status</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="loansTable"></tbody>
@@ -194,6 +195,11 @@ async function loadUsers() {
     const res = await fetch('/api/users');
     const data = await res.json();
 
+    if (!res.ok) {
+    alert(data.message); // 🔥 tampilkan error asli
+    return;
+}
+
     document.getElementById('totalUsers').innerText = data.length;
 
     const table = document.getElementById('usersTable');
@@ -243,10 +249,41 @@ async function loadLoans() {
             <td>${l.loan_date}</td>
             <td>${l.return_date ?? '-'}</td>
             <td>${l.status}</td>
+            <td>
+    ${
+        l.status === 'dipinjam'
+        ? `<button onclick="kembalikan(${l.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">Belum Kembali</button>`
+        : `<span class="bg-green-500 px-3 py-1 text-white rounded text-sm">Selesai</span>`
+    }
+</td>
         </tr>`;
     });
 
     document.getElementById('totalLoans').innerText = loans.length;
+}
+
+async function kembalikan(id) {
+    if (!confirm("Yakin buku sudah dikembalikan?")) return;
+
+    try {
+     const res = await fetch(`http://127.0.0.1:8003/api/loans/${id}/return`, {
+     method: 'PUT'
+     });
+
+        const data = await res.json(); // 🔥 ambil response asli
+
+        if (!res.ok) {
+            alert(data.message); // 🔥 tampilkan pesan backend
+            return;
+        }
+
+        await loadLoans();
+        alert(data.message); // 🔥 tampilkan sukses dari backend
+
+    } catch (err) {
+        console.error(err);
+        alert("Server tidak merespon / bukan JSON");
+    }
 }
 
 // INIT

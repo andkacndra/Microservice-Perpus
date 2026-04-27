@@ -23,6 +23,23 @@ class BookController extends Controller
         return response()->json($book);
     }
 
+    public function reduceStock($id)
+{
+    $book = Book::findOrFail($id);
+    $book->stok -= 1;
+    $book->save();
+
+    return response()->json(['message' => 'stok dikurangi']);
+}
+    public function addStock($id)
+{
+    $book = Book::findOrFail($id);
+    $book->stok += 1;
+    $book->save();
+
+    return response()->json(['message' => 'stok ditambah']);
+}
+
     public function store(Request $request)
     {
         $request->validate([
