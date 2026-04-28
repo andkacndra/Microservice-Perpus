@@ -16,12 +16,12 @@ body { font-family: 'Inter', sans-serif; }
 
     <!-- SIDEBAR -->
     <aside class="w-64 bg-white shadow-xl p-6">
-        <h1 class="text-2xl font-bold mb-8">📚 Perpus</h1>
+        <h1 class="text-2xl font-bold mb-8">SiPerpus</h1>
 
         <nav class="space-y-3">
-            <button onclick="showTab('books')" class="menu">📖 Buku</button>
-            <button onclick="showTab('users')" class="menu">👤 User</button>
-            <button onclick="showTab('loans')" class="menu">🔄 Peminjaman</button>
+            <button onclick="showTab('books', this)" class="menu">📖 Buku</button>
+            <button onclick="showTab('users', this)" class="menu">👤 User</button>
+            <button onclick="showTab('loans', this)" class="menu">🔄 Peminjaman</button>
         </nav>
     </aside>
 
@@ -31,7 +31,7 @@ body { font-family: 'Inter', sans-serif; }
         <!-- HEADER -->
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-3xl font-semibold">Dashboard</h2>
-            <span class="text-gray-500">Microservice Gateway</span>
+            <span class="text-gray-500">"Sebuah buku dapat merubah dari yang tidak tahu menjadi berilmu"</span>
         </div>
 
         <!-- STATS -->
@@ -53,13 +53,25 @@ body { font-family: 'Inter', sans-serif; }
         <!-- BOOKS -->
         <section id="booksTab">
             <h3 class="title">Kelola Buku</h3>
+            <div class="mb-4 flex gap-2">
+    <input id="judul" placeholder="Judul" class="border p-2 rounded">
+    <input id="penulis" placeholder="Penulis" class="border p-2 rounded">
+    <input id="stok" type="number" placeholder="Stok" class="border p-2 rounded w-24">
+
+    <button onclick="tambahBuku()" 
+        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+        + Tambah
+    </button>
+</div>
             <div class="table-wrap">
                 <table class="table">
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Judul</th>
                             <th>Penulis</th>
                             <th>Stok</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="booksTable"></tbody>
@@ -70,10 +82,21 @@ body { font-family: 'Inter', sans-serif; }
         <!-- USERS -->
         <section id="usersTab" class="hidden">
             <h3 class="title">Kelola User</h3>
+            <div class="mb-4 flex gap-2">
+    <input id="namaUser" placeholder="Nama" class="border p-2 rounded">
+    <input id="emailUser" placeholder="Email" class="border p-2 rounded">
+
+    <button onclick="tambahUser()" 
+        class="bg-blue-500 text-white px-4 py-2 rounded">
+        + Tambah User
+    </button>
+</div>
+            
             <div class="table-wrap">
                 <table class="table">
                     <thead>
                         <tr>
+                            <th>ID</th>
                             <th>Nama</th>
                             <th>Email</th>
                         </tr>
@@ -86,7 +109,15 @@ body { font-family: 'Inter', sans-serif; }
         <!-- LOANS -->
         <section id="loansTab" class="hidden">
             <h3 class="title">Peminjaman</h3>
-            <div class="table-wrap">
+              <div class="mb-4 flex gap-2">
+              <select id="userId" class="border p-2 rounded"></select>
+              <select id="bookId" class="border p-2 rounded"></select>
+
+         <button onclick="tambahPeminjaman()" 
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+            + Pinjam
+        </button>
+    </div>
                 <table class="table">
                     <thead>
                         <tr>
@@ -120,6 +151,10 @@ body { font-family: 'Inter', sans-serif; }
     background: #f3f4f6;
 }
 
+.menu.active {
+    background: #3b82f6; /* biru */
+    color: white;
+}
 .card {
     background: white;
     padding: 20px;
@@ -162,12 +197,22 @@ body { font-family: 'Inter', sans-serif; }
 <script>
 
 // TAB SWITCH
-function showTab(tab) {
+function showTab(tab, el) {
+    // sembunyikan semua tab
     document.getElementById('booksTab').classList.add('hidden');
     document.getElementById('usersTab').classList.add('hidden');
     document.getElementById('loansTab').classList.add('hidden');
 
+    // tampilkan tab aktif
     document.getElementById(tab + 'Tab').classList.remove('hidden');
+
+    // 🔥 hapus semua active
+    document.querySelectorAll('.menu').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // 🔥 tambahkan active ke yang diklik
+    el.classList.add('active');
 }
 
 // FETCH BOOKS
@@ -183,9 +228,17 @@ async function loadBooks() {
     data.forEach(b => {
         table.innerHTML += `
         <tr>
+            <td>${b.id}</td>
             <td>${b.judul ?? '-'}</td>
             <td>${b.penulis ?? '-'}</td>
             <td>${b.stok ?? '-'}</td>
+             <td>
+        <button onclick="editBuku(${b.id}, '${b.judul}', '${b.penulis}', ${b.stok})"
+            class="bg-yellow-500 text-white px-2 py-1 rounded text-sm">
+            Edit
+        </button>
+    </td>
+</tr>
         </tr>`;
     });
 }
@@ -208,6 +261,7 @@ async function loadUsers() {
     data.forEach(u => {
         table.innerHTML += `
         <tr>
+            <td>${u.id}</td>
             <td>${u.name}</td>
             <td>${u.email}</td>
         </tr>`;
@@ -216,6 +270,7 @@ async function loadUsers() {
 
 // FETCH LOANS
 async function loadLoans() {
+
     const [loanRes, userRes, bookRes] = await Promise.all([
         fetch('/api/loans'),
         fetch('/api/users'),
@@ -225,6 +280,26 @@ async function loadLoans() {
     const loans = await loanRes.json();
     const users = await userRes.json();
     const books = await bookRes.json();
+
+    // isi dropdown user
+const userSelect = document.getElementById('userId');
+userSelect.innerHTML = '';
+
+users.forEach(u => {
+    userSelect.innerHTML += `<option value="${u.id}">${u.name}</option>`;
+});
+
+/// isi dropdown buku
+const bookSelect = document.getElementById('bookId');
+bookSelect.innerHTML = '';
+
+books.forEach(b => {
+    bookSelect.innerHTML += `
+        <option value="${b.id}" ${b.stok == 0 ? 'disabled' : ''}>
+            ${b.judul} (stok: ${b.stok})
+        </option>
+    `;
+});
 
     // mapping user
     const userMap = {};
@@ -286,10 +361,150 @@ async function kembalikan(id) {
     }
 }
 
+async function tambahPeminjaman() {
+    const user_id = document.getElementById('userId').value;
+    const book_id = document.getElementById('bookId').value;
+
+    if (!user_id || !book_id) {
+        alert("Isi User ID dan Book ID dulu");
+        return;
+    }
+
+    try {
+        const res = await fetch('http://127.0.0.1:8003/api/loans', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_id: user_id,
+                book_id: book_id
+            })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message);
+            return;
+        }
+
+        alert("Peminjaman berhasil!");
+        loadLoans();
+
+        // reset input
+        document.getElementById('userId').value = '';
+        document.getElementById('bookId').value = '';
+
+    } catch (err) {
+        console.error(err);
+        alert("Server error");
+    }
+}
+
+async function tambahBuku() {
+    const judul = document.getElementById('judul').value;
+    const penulis = document.getElementById('penulis').value;
+    const stok = document.getElementById('stok').value;
+
+    if (!judul || !penulis || !stok) {
+        alert("Isi semua field");
+        return;
+    }
+
+    const res = await fetch('http://127.0.0.1:8002/api/books', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ judul, penulis, stok })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert(data.message);
+        return;
+    }
+
+    alert("Buku berhasil ditambahkan");
+    loadBooks();
+
+    // reset input
+    document.getElementById('judul').value = '';
+    document.getElementById('penulis').value = '';
+    document.getElementById('stok').value = '';
+}
+
+function editBuku(id, judul, penulis, stok) {
+    const newJudul = prompt("Judul:", judul);
+    const newPenulis = prompt("Penulis:", penulis);
+    const newStok = prompt("Stok:", stok);
+
+    if (!newJudul || !newPenulis || !newStok) return;
+
+    updateBuku(id, newJudul, newPenulis, newStok);  
+}
+
+async function updateBuku(id, judul, penulis, stok) {
+    const res = await fetch(`http://127.0.0.1:8002/api/books/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ judul, penulis, stok })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        alert(data.message);
+        return;
+    }
+
+    alert("Buku berhasil diupdate");
+    loadBooks();
+}
+
+async function tambahUser() {
+    const name = document.getElementById('namaUser').value;
+    const email = document.getElementById('emailUser').value;
+
+    if (!name || !email) {
+        alert("Isi semua field");
+        return;
+    }
+
+    try {
+        const res = await fetch('http://127.0.0.1:8001/api/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, email })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.message);
+            return;
+        }
+
+        alert("User berhasil ditambahkan");
+        loadUsers();
+
+        document.getElementById('namaUser').value = '';
+        document.getElementById('emailUser').value = '';
+
+    } catch (err) {
+        console.error(err);
+        alert("Server error");
+    }
+}
+
 // INIT
 loadBooks();
 loadUsers();
 loadLoans();
+
+document.querySelector('.menu').classList.add('active');
 
 </script>
 

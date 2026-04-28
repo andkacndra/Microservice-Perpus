@@ -52,4 +52,20 @@ class BookController extends Controller
 
         return response()->json($book, 201);
     }
+
+    public function update(Request $request, $id)
+{
+    $book = Book::findOrFail($id);
+
+    $book->update([
+        'judul' => $request->judul,
+        'penulis' => $request->penulis,
+        'stok' => $request->stok
+    ]);
+
+    return response()->json([
+        'message' => 'Buku berhasil diupdate',
+        'data' => $book
+    ]);
+}
 }
