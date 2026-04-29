@@ -9,6 +9,7 @@
 4. php artisan migrate
 
 ### == Jalankan ==
-1. UserService → port 8001
-2. BookService → port 8002
-3. LoanService → port 8003
+1. user-service → port 8001
+2. book-serivce → port 8002
+3. loan-service → port 8003
+4. gateway-perpus → port 8000
