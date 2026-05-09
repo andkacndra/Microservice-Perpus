@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+
+  gateway-perpus:
+    build: ./gateway-perpus
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./gateway-perpus:/app
+    depends_on:
+      - mysql
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./user-service:/app
+    depends_on:
+      - mysql
+
+  book-service:
+    build: ./book-service
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./book-service:/app
+    depends_on:
+      - mysql
+
+  loan-service:
+    build: ./loan-service
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./loan-service:/app
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.0
+    container_name: microservice-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
